@@ -1,9 +1,5 @@
 use crate::error::ArpEntryParseError;
-use std::{
-    fmt, fs,
-    io::{self, BufRead, BufReader},
-    net::Ipv4Addr,
-};
+use std::{fmt, net::Ipv4Addr};
 
 pub const MAC_ADDRESS_SIZE: usize = 6usize;
 
@@ -17,20 +13,6 @@ pub struct ArpEntry {
     pub mac: MacAddress,
     pub ip: Ipv4Addr,
     pub device: String,
-}
-
-impl ArpEntry {
-    pub fn from_os() -> io::Result<Vec<Self>> {
-        let mut entries = Vec::new();
-        let f = BufReader::new(fs::File::open("/proc/net/arp")?);
-        let mut lines = f.lines();
-        let _header = lines.next();
-        for line in lines {
-            let line = line?;
-            entries.push(line.parse().expect("Invalid format from kernel ?!"));
-        }
-        Ok(entries)
-    }
 }
 
 impl fmt::Display for MacAddress {
