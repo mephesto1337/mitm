@@ -1,4 +1,4 @@
-# A small tool to detect MITM attacks by watching `/proc/net/arp`.
+A small tool to detect MITM attacks by watching `/proc/net/arp`.
 
 # Lib
 If an @IP changes of @MAC (and the previous MAC was seen less than 5 minutes
