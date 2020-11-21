@@ -17,7 +17,7 @@ fn to_json(text: String, class: String, tooltip: String) {
 }
 
 fn main() -> io::Result<()> {
-    let mut entries = ArpTable::new()?;
+    let mut entries = ArpTable::new(None)?;
 
     loop {
         sleep(Duration::from_secs(1));

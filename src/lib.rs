@@ -30,10 +30,11 @@ pub struct ArpChange {
 #[derive(Debug)]
 pub struct ArpTable {
     entries: HashMap<Ipv4Addr, Vec<(MacAddress, Instant)>>,
+    mac_lifetime: Duration,
 }
 
 impl ArpTable {
-    pub fn new() -> io::Result<Self> {
+    pub fn new(mac_lifetime: Option<Duration>) -> io::Result<Self> {
         let now = Instant::now();
         let arp_file = BufReader::new(fs::File::open("/proc/net/arp")?);
 
@@ -55,7 +56,10 @@ impl ArpTable {
             }
         }
 
-        Ok(Self { entries })
+        Ok(Self {
+            entries,
+            mac_lifetime: mac_lifetime.unwrap_or(ARP_ENTRY_LIFETIME),
+        })
     }
 
     fn read_os_entries() -> io::Result<Vec<ArpEntry>> {
@@ -76,6 +80,7 @@ impl ArpTable {
     pub fn update(&mut self) -> io::Result<Vec<ArpChange>> {
         let now = Instant::now();
         let mut changes = Vec::new();
+        let mac_lifetime = &self.mac_lifetime;
 
         for ae in Self::read_os_entries()?.drain(..) {
             match self.entries.entry(ae.ip) {
@@ -89,7 +94,7 @@ impl ArpTable {
                     // Evict old entries
                     let mut updated_all_macs: Vec<_> = all_macs
                         .drain(..)
-                        .filter(|&(_, when)| now - when < ARP_ENTRY_LIFETIME)
+                        .filter(|&(_, when)| &(now - when) < mac_lifetime)
                         .collect();
 
                     let mut found = false;
