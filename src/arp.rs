@@ -46,6 +46,14 @@ impl fmt::Debug for ArpEntry {
     }
 }
 
+impl MacAddress {
+    pub const fn zeroed() -> Self {
+        Self {
+            bytes: [0u8; MAC_ADDRESS_SIZE],
+        }
+    }
+}
+
 impl std::str::FromStr for ArpEntry {
     type Err = ArpEntryParseError;
 

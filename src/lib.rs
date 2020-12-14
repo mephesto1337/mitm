@@ -81,6 +81,7 @@ impl ArpTable {
         let now = Instant::now();
         let mut changes = Vec::new();
         let mac_lifetime = &self.mac_lifetime;
+        const NULL_MAC_ADDR: MacAddress = MacAddress::zeroed();
 
         for ae in Self::read_os_entries()?.drain(..) {
             match self.entries.entry(ae.ip) {
@@ -99,15 +100,16 @@ impl ArpTable {
 
                     let mut found = false;
                     for (mac, when) in updated_all_macs.iter_mut() {
-                        if mac != &ae.mac {
+                        if mac == &ae.mac || mac == &NULL_MAC_ADDR {
+                            // Mac has not changed or it was "00:00:00:00:00:00"
+                            found = true;
+                            *when = now;
+                        } else {
                             changes.push(ArpChange {
                                 host: ip,
                                 old_mac: (mac.clone(), when.clone()),
                                 new_mac: ae.mac.clone(),
                             });
-                        } else {
-                            found = true;
-                            *when = now;
                         }
                     }
 
