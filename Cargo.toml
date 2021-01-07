@@ -9,5 +9,9 @@ edition = "2018"
 [dependencies]
 
 [[bin]]
+name = "polybar-mitm"
+path = "src/bins/polybar.rs"
+
+[[bin]]
 name = "waybar-mitm"
 path = "src/bins/waybar.rs"
