@@ -17,6 +17,7 @@ fn to_format(text: String, color: String, tooltip: Option<String>) {
         let mut file = fs::OpenOptions::new()
             .write(true)
             .append(true)
+            .create(true)
             .open(LOG_FILE)?;
         file.write_all(&b"\n"[..])?;
         file.write_all(tooltip.as_bytes())?;
@@ -62,7 +63,7 @@ fn main() -> io::Result<()> {
                         (Some("OK".into()), None, None)
                     } else {
                         let mut tooltip = String::with_capacity(changes.len() * 83);
-                        let text = "\\u26A0\\uFE0F MITM attack".into();
+                        let text = "⚠ MITM attack".into();
                         let now = Instant::now();
                         for change in changes.drain(..) {
                             tooltip.push_str(&format!(
