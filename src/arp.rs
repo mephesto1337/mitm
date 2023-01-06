@@ -8,6 +8,12 @@ pub struct MacAddress {
     bytes: [u8; MAC_ADDRESS_SIZE],
 }
 
+impl From<[u8; MAC_ADDRESS_SIZE]> for MacAddress {
+    fn from(bytes: [u8; MAC_ADDRESS_SIZE]) -> Self {
+        Self { bytes }
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ArpEntry {
     pub mac: MacAddress,
@@ -110,7 +116,7 @@ mod tests {
         let s = "192.168.1.1      0x1         0x2         44:ce:7d:60:66:98     *        wlan0";
         let ae = ArpEntry {
             ip: Ipv4Addr::new(192, 168, 1, 1),
-            mac: [0x44, 0xce, 0x7d, 0x60, 0x66, 0x98],
+            mac: [0x44, 0xce, 0x7d, 0x60, 0x66, 0x98].into(),
             device: "wlan0".into(),
         };
         assert_eq!(s.parse::<ArpEntry>(), Ok(ae));
@@ -134,13 +140,12 @@ mod tests {
     fn parse_arpentry_err_mac_byte() {
         let s = "192.168.1.1      0x1         0x2         44:cg:7d:60:66:98     *        wlan0";
         assert_eq!(
-            s.parse::<ArpEntry>().map_err(|e| {
-                if let ArpEntryParseError::MacByte(_) = e {
+            s.parse::<ArpEntry>()
+                .map_err(|e| if let ArpEntryParseError::MacByte(_) = e {
                     true
                 } else {
                     false
-                }
-            }),
+                }),
             Err(true)
         );
     }
