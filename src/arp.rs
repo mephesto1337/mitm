@@ -3,7 +3,7 @@ use std::{fmt, net::Ipv4Addr};
 
 pub const MAC_ADDRESS_SIZE: usize = 6usize;
 
-#[derive(PartialEq, Eq, Hash, Clone, Default)]
+#[derive(PartialEq, Eq, Hash, Clone, Default, Copy)]
 pub struct MacAddress {
     bytes: [u8; MAC_ADDRESS_SIZE],
 }
@@ -127,11 +127,7 @@ mod tests {
         let s = "192.168.11      0x1         0x2         44:ce:7d:60:66:98     *        wlan0";
         assert_eq!(
             s.parse::<ArpEntry>()
-                .map_err(|e| if let ArpEntryParseError::Ip(_) = e {
-                    true
-                } else {
-                    false
-                }),
+                .map_err(|e| matches!(e, ArpEntryParseError::Ip(_))),
             Err(true)
         );
     }
@@ -141,11 +137,7 @@ mod tests {
         let s = "192.168.1.1      0x1         0x2         44:cg:7d:60:66:98     *        wlan0";
         assert_eq!(
             s.parse::<ArpEntry>()
-                .map_err(|e| if let ArpEntryParseError::MacByte(_) = e {
-                    true
-                } else {
-                    false
-                }),
+                .map_err(|e| matches!(e, ArpEntryParseError::MacByte(_))),
             Err(true)
         );
     }

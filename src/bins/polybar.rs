@@ -7,15 +7,14 @@ use std::{
 
 use mitm::ArpTable;
 
-const COLOR_ORANGE: &'static str = "%{F#ff9d00}";
-const COLOR_RED: &'static str = "%{F#ff0000}";
-const COLOR_RESET: &'static str = "%{F-}";
-const LOG_FILE: &'static str = "/home/thomas/tmp/arp.log";
+const COLOR_ORANGE: &str = "%{F#ff9d00}";
+const COLOR_RED: &str = "%{F#ff0000}";
+const COLOR_RESET: &str = "%{F-}";
+const LOG_FILE: &str = "/home/thomas/tmp/arp.log";
 
 fn to_format(text: String, color: String, tooltip: Option<String>) {
     fn write_tooltip(tooltip: String) -> io::Result<()> {
         let mut file = fs::OpenOptions::new()
-            .write(true)
             .append(true)
             .create(true)
             .open(LOG_FILE)?;

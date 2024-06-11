@@ -45,7 +45,7 @@ impl ArpTable {
         for ae in Self::read_os_entries()?.drain(..) {
             match entries.entry(ae.ip) {
                 Entry::Vacant(v) => {
-                    v.insert(vec![(ae.mac, now.clone())]);
+                    v.insert(vec![(ae.mac, now)]);
                 }
                 Entry::Occupied(o) => {
                     return Err(io::Error::new(
@@ -86,10 +86,10 @@ impl ArpTable {
         for ae in Self::read_os_entries()?.drain(..) {
             match self.entries.entry(ae.ip) {
                 Entry::Vacant(v) => {
-                    v.insert(vec![(ae.mac, now.clone())]);
+                    v.insert(vec![(ae.mac, now)]);
                 }
                 Entry::Occupied(mut o) => {
-                    let ip = o.key().clone();
+                    let ip = *o.key();
                     let all_macs = o.get_mut();
 
                     // Evict old entries
@@ -107,8 +107,8 @@ impl ArpTable {
                         } else {
                             changes.push(ArpChange {
                                 host: ip,
-                                old_mac: (mac.clone(), when.clone()),
-                                new_mac: ae.mac.clone(),
+                                old_mac: (*mac, *when),
+                                new_mac: ae.mac,
                             });
                         }
                     }
