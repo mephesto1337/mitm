@@ -100,7 +100,10 @@ impl ArpTable {
 
                     let mut found = false;
                     for (mac, when) in updated_all_macs.iter_mut() {
-                        if mac == &ae.mac || mac == &NULL_MAC_ADDR {
+                        if mac == &NULL_MAC_ADDR {
+                            continue;
+                        }
+                        if mac == &ae.mac {
                             // Mac has not changed or it was "00:00:00:00:00:00"
                             found = true;
                             *when = now;
