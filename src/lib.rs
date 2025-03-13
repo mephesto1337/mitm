@@ -20,8 +20,11 @@ pub struct ArpChange {
     /// Host that has changed @MAC
     pub host: Ipv4Addr,
 
+    /// Previsous seen @MAC
+    pub old_mac: MacAddress,
+
     /// Previsous seen @MAC and last time seen
-    pub old_mac: (MacAddress, Instant),
+    pub old_mac_last_seen: Instant,
 
     /// New @MAC (seen just now)
     pub new_mac: MacAddress,
@@ -110,7 +113,8 @@ impl ArpTable {
                         } else {
                             changes.push(ArpChange {
                                 host: ip,
-                                old_mac: (*mac, *when),
+                                old_mac: *mac,
+                                old_mac_last_seen: *when,
                                 new_mac: ae.mac,
                             });
                         }

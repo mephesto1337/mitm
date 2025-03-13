@@ -7,7 +7,7 @@ pub enum ArpEntryParseError {
     MacByte(std::num::ParseIntError),
     MacTooLong { extra_bytes: usize },
     MacTooShort { missing_bytes: usize },
-    Incomplete,
+    InvalidFormat(String),
 }
 
 impl std::convert::From<std::num::ParseIntError> for ArpEntryParseError {
@@ -22,9 +22,21 @@ impl std::convert::From<std::net::AddrParseError> for ArpEntryParseError {
     }
 }
 
+impl std::convert::From<String> for ArpEntryParseError {
+    fn from(s: String) -> Self {
+        Self::InvalidFormat(s)
+    }
+}
+
 impl fmt::Display for ArpEntryParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self, f)
+        match self {
+            Self::Ip(addr_parse_error) => fmt::Display::fmt(&addr_parse_error, f),
+            Self::MacByte(parse_int_error) => fmt::Display::fmt(parse_int_error, f),
+            Self::MacTooLong { extra_bytes } => write!(f, "Got {extra_bytes} extra bytes"),
+            Self::MacTooShort { missing_bytes } => write!(f, "{missing_bytes} are missing"),
+            Self::InvalidFormat(ref s) => write!(f, "Invalid /proc/net/arp entry {s:?}"),
+        }
     }
 }
 

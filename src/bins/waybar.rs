@@ -1,4 +1,6 @@
 use std::{
+    borrow::Cow,
+    fmt::Write,
     io,
     thread::sleep,
     time::{Duration, Instant},
@@ -6,7 +8,7 @@ use std::{
 
 use mitm::ArpTable;
 
-fn to_json(text: String, class: String, tooltip: String) {
+fn to_json(text: &str, class: &str, tooltip: &str) {
     println!(
         "{{\"text\":\"{}\",\"class\":\"{}\",\"tooltip\":\"{}\",\"alt\":\"{}\"}}",
         text,
@@ -22,37 +24,37 @@ fn main() -> io::Result<()> {
     loop {
         sleep(Duration::from_secs(1));
 
-        let (text, class, tooltip): (Option<String>, Option<String>, Option<String>) =
+        let (text, class, tooltip): (Cow<'static, str>, &'static str, Option<String>) =
             match entries.update() {
                 Ok(mut changes) => {
                     if changes.is_empty() {
-                        (Some("OK".into()), None, None)
+                        ("OK".into(), "", None)
                     } else {
                         let mut tooltip = String::with_capacity(changes.len() * 83);
                         let text = "\\u26A0\\uFE0F MITM attack".into();
                         let now = Instant::now();
                         for change in changes.drain(..) {
-                            tooltip.push_str(&format!(
-                                "Host {} has changed from {} to {} in {}s\n",
+                            writeln!(
+                                &mut tooltip,
+                                "Host {} has changed from {} to {} in {}s",
                                 change.host,
-                                change.old_mac.0,
+                                change.old_mac,
                                 change.new_mac,
-                                (now - change.old_mac.1).as_secs()
-                            ));
+                                (now - change.old_mac_last_seen).as_secs()
+                            )
+                            .expect("Write to string cannot fail");
                         }
 
-                        (Some(text), Some("warning".into()), Some(tooltip))
+                        (text, "warning", Some(tooltip))
                     }
                 }
                 Err(e) => {
-                    let text = format!("{}", e);
-                    (Some(text), Some("error".into()), None)
+                    let text = format!("{}", e).into();
+                    (text, "error", None)
                 }
             };
 
-        let text = text.unwrap_or_else(String::new);
-        let class = class.unwrap_or_else(String::new);
         let tooltip = tooltip.unwrap_or_else(String::new);
-        to_json(text, class, tooltip);
+        to_json(text.as_ref(), class, tooltip.as_str());
     }
 }

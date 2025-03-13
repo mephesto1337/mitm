@@ -3,7 +3,7 @@ use std::{fmt, net::Ipv4Addr};
 
 pub const MAC_ADDRESS_SIZE: usize = 6usize;
 
-#[derive(PartialEq, Eq, Hash, Clone, Default, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Default, Copy, Debug)]
 pub struct MacAddress {
     bytes: [u8; MAC_ADDRESS_SIZE],
 }
@@ -14,7 +14,7 @@ impl From<[u8; MAC_ADDRESS_SIZE]> for MacAddress {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ArpEntry {
     pub mac: MacAddress,
     pub ip: Ipv4Addr,
@@ -33,22 +33,6 @@ impl fmt::Display for MacAddress {
             self.bytes[4],
             self.bytes[5]
         )
-    }
-}
-impl fmt::Debug for MacAddress {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MacAddress")
-            .field("bytes", &format!("{:02x?}", self.bytes))
-            .finish()
-    }
-}
-impl fmt::Debug for ArpEntry {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ArpEntry")
-            .field("mac", &self.mac)
-            .field("ip", &self.ip)
-            .field("device", &self.device)
-            .finish()
     }
 }
 
@@ -76,6 +60,7 @@ impl std::str::FromStr for ArpEntry {
         for (i, field) in s.split_ascii_whitespace().enumerate() {
             match i {
                 0 => ae.ip = field.parse()?,
+                1 | 2 | 4 => {}
                 3 => {
                     let mut mac_iter = field.split(':');
                     for i in 0..MAC_ADDRESS_SIZE {
@@ -95,14 +80,14 @@ impl std::str::FromStr for ArpEntry {
                     ae.device = field.into();
                     seen_all = true;
                 }
-                _ => {}
+                _ => return Err(s.to_string().into()),
             }
         }
 
         if seen_all {
             Ok(ae)
         } else {
-            Err(ArpEntryParseError::Incomplete)
+            Err(s.to_string().into())
         }
     }
 }

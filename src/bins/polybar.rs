@@ -1,4 +1,6 @@
 use std::{
+    borrow::Cow,
+    fmt::Write as FmtWrite,
     fs,
     io::{self, Write},
     thread::sleep,
@@ -7,13 +9,14 @@ use std::{
 
 use mitm::ArpTable;
 
+const COLOR_NONE: &str = "";
 const COLOR_ORANGE: &str = "%{F#ff9d00}";
 const COLOR_RED: &str = "%{F#ff0000}";
 const COLOR_RESET: &str = "%{F-}";
 const LOG_FILE: &str = "/home/thomas/tmp/arp.log";
 
-fn to_format(text: String, color: String, tooltip: Option<String>) {
-    fn write_tooltip(tooltip: String) -> io::Result<()> {
+fn to_format(text: Cow<'_, str>, color: &str, tooltip: Option<String>) {
+    fn write_tooltip(tooltip: &str) -> io::Result<()> {
         let mut file = fs::OpenOptions::new()
             .append(true)
             .create(true)
@@ -27,7 +30,7 @@ fn to_format(text: String, color: String, tooltip: Option<String>) {
     let mut tooltip_err = None;
 
     if let Some(tooltip) = tooltip {
-        if let Err(e) = write_tooltip(tooltip) {
+        if let Err(e) = write_tooltip(&tooltip) {
             tooltip_err = Some(format!("{}", e));
         }
     }
@@ -55,36 +58,36 @@ fn main() -> io::Result<()> {
     loop {
         sleep(Duration::from_secs(1));
 
-        let (text, color, tooltip): (Option<String>, Option<String>, Option<String>) =
+        let (text, color, tooltip): (Cow<'static, str>, &'static str, Option<String>) =
             match entries.update() {
                 Ok(mut changes) => {
                     if changes.is_empty() {
-                        (Some("OK".into()), None, None)
+                        ("OK".into(), COLOR_NONE, None)
                     } else {
                         let mut tooltip = String::with_capacity(changes.len() * 83);
                         let text = "⚠ MITM attack".into();
                         let now = Instant::now();
                         for change in changes.drain(..) {
-                            tooltip.push_str(&format!(
-                                "Host {} has changed from {} to {} in {}s\n",
+                            writeln!(
+                                &mut tooltip,
+                                "Host {} has changed from {} to {} in {}s",
                                 change.host,
-                                change.old_mac.0,
+                                change.old_mac,
                                 change.new_mac,
-                                (now - change.old_mac.1).as_secs()
-                            ));
+                                (now - change.old_mac_last_seen).as_secs()
+                            )
+                            .expect("Write to string cannot fail");
                         }
 
-                        (Some(text), Some(COLOR_ORANGE.into()), Some(tooltip))
+                        (text, COLOR_ORANGE, Some(tooltip))
                     }
                 }
                 Err(e) => {
-                    let text = format!("{}", e);
-                    (Some(text), Some(COLOR_RED.into()), None)
+                    let text = format!("{}", e).into();
+                    (text, COLOR_RED, None)
                 }
             };
 
-        let text = text.unwrap_or_else(String::new);
-        let color = color.unwrap_or_else(String::new);
         to_format(text, color, tooltip);
     }
 }
